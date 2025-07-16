@@ -4,6 +4,7 @@
 # ///
 
 import argparse
+import os
 import subprocess
 import sys
 
@@ -11,6 +12,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--with-system', default=False, action='store_true')
 args = parser.parse_args(sys.argv[1:])
 
+# prevent warning that VIRTUAL_ENV is different
+del os.environ['VIRTUAL_ENV']
 
 subprocess.call('rm -fr .venv', shell=True, text=True)
 
