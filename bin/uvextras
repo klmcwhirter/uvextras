@@ -1,5 +1,5 @@
 #!/bin/bash
 
-root=$(dirname $(dirname $0))
+root=$(dirname $(dirname $(readlink -f $0)))
 
-PYTHONPATH=$root:$PYTHONPATH uv run python -m uvextras $@
+PYTHONPATH=$root:$PYTHONPATH uv run --no-project python -m uvextras "$@"
