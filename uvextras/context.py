@@ -34,15 +34,6 @@ class AppContext:
     def verbose(self) -> bool:
         return self.args.verbose
 
-    def find_script(self, name: str) -> Optional[AppConfigScript]:
-        rc = None
-
-        filtered = [s for s in self.config.scripts if s.name == name]
-        if len(filtered) > 0:
-            rc = filtered[0]
-
-        return rc
-
     def _setup_logging(self) -> None:
         log_level = logging.DEBUG if self.verbose else logging.INFO
         logging.basicConfig(

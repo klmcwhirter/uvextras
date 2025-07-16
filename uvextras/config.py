@@ -1,9 +1,9 @@
 '''The configuration concepts'''
 
-from dataclasses import dataclass, field
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Self
 
 
 @dataclass
@@ -49,7 +49,7 @@ class AppConfigEnvVarDict(dict[str, Any]):
                 bind, resolved = resolve_envvar(evs[0])
                 self._bound[bind] = resolved
 
-        return self._bound[key]
+        return self._bound.get(key, None)
 
     def __repr__(self) -> str:
         rc = f'{self.__class__.__name__}({self._bound})'
@@ -75,6 +75,23 @@ class AppConfigScript:
         yield 'is_local', self.is_local
         yield 'options', self.options
 
+    @property
+    def options_str(self) -> str:
+        options = []
+        for o, v in self.options.items():
+            v = f' "{v}"' if v is not None else ""
+            options.append(f'--{o}{v}')
+        return ' '.join(options)
+
+    def override_options(self, other: Self) -> None:
+        for o in other.options:
+            self.options[o] = other.options[o]
+
+    def path(self, envvars: AppConfigEnvVarDict) -> Path:
+        script_path = f'{envvars['localscripts']}/{self.name}' if self.is_local else f'{envvars['scripts']}/{self.name}'
+        script_path = f'{script_path}.py' if not script_path.endswith('.py') else script_path
+        return Path(script_path)
+
 
 @dataclass
 class AppConfig:
@@ -84,6 +101,51 @@ class AppConfig:
     def __rich_repr__(self):
         yield 'envvars', self.envvars
         yield 'scripts', self.scripts
+
+    def find_script(self, name: str) -> Optional[AppConfigScript]:
+        rc = None
+
+        filtered = [s for s in self.scripts if s.name == name]
+        if len(filtered) > 0:
+            rc = filtered[0]
+
+        return rc
+
+    def merge(self, other: Self) -> None:
+        for s in other.scripts:
+            if not s.is_local:
+                # override options
+                gs = self.find_script(s.name)
+                if gs is not None:
+                    gs.override_options(s)
+            else:
+                self.scripts.append(s)
+
+    def merge_scripts(self, dir: Optional[str], desc: str) -> None:
+        if not dir or dir is None:
+            return
+
+        def script_norm_name(p: Path) -> str:
+            return str(p).removeprefix(str(path)).removeprefix('/').removesuffix('.py')
+
+        path = Path(dir)
+        if path.exists() and path.is_dir():
+            filtered_script_names = [
+                script_norm_name(p)
+                for p in path.iterdir()
+                if p.is_file() and str(p).endswith('.py') and not self.find_script(script_norm_name(p))
+            ]
+
+            self.scripts.extend(
+                AppConfigScript(
+                    name=name,
+                    cmd='uv run',
+                    desc=desc,
+                    is_local=True,
+                    options={}
+                )
+                for name in filtered_script_names
+            )
 
     @staticmethod
     def from_yaml(data: dict[str, Any]) -> AppConfig:
@@ -119,7 +181,16 @@ def load_config() -> AppConfig:
     config_file = os.path.expandvars(BOOTSTRAP_CONFIG['config'])
     file = config_file if os.path.exists(config_file) else 'uvextras.yaml'
 
-    return load_config_for(file)
+    config = load_config_for(file)
+
+    local_config = config.envvars['localconfig']
+    if os.path.exists(local_config):
+        lcfg = load_config_for(local_config)
+        config.merge(lcfg)
+
+    config.merge_scripts(config.envvars['localscripts'], desc='merged from local')
+
+    return config
 
 
 def load_config_for(file: str) -> AppConfig:

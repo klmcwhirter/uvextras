@@ -1,8 +1,7 @@
 
 import logging
+import os
 import subprocess
-
-from rich.pretty import pprint
 
 from uvextras.config import AppConfigScript
 from uvextras.context import AppContext
@@ -10,7 +9,7 @@ from uvextras.context import AppContext
 
 def exec_dependencies(ctx: AppContext, script: AppConfigScript) -> None:
     for name in script.options['depends-on']:
-        dscript = ctx.find_script(name)
+        dscript = ctx.config.find_script(name)
         if dscript is not None:
             exec_script(ctx, dscript)
         else:
@@ -18,25 +17,23 @@ def exec_dependencies(ctx: AppContext, script: AppConfigScript) -> None:
 
 
 def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
-    options = []
-    for o, v in script.options.items():
-        v = f' "{v}"' if v is not None else ""
-        options.append(f'--{o}{v}')
-
-    script_path = script.name if script.is_local else f'{ctx.config.envvars['scriptshome']}/{script.name}'
-    script_path = f'{script_path}.py' if not script_path.endswith('.py') else script_path
-    cmd = f'{script.cmd} {script_path} {" ".join(options)}'
+    extra_args = ' '.join(ctx.args.args) if ctx.args.args else ''
+    cmd = f'{script.cmd} {script.path(ctx.config.envvars)} {script.options_str} {extra_args}'
 
     if ctx.verbose:
-        pprint(cmd)
+        print(cmd)
 
-    subprocess.call(cmd, shell=True, text=ctx.verbose)
+    # disable venv
+    environ = os.environ.copy()
+    del environ['VIRTUAL_ENV']
+
+    subprocess.call(cmd, shell=True, env=environ, text=ctx.verbose)
 
 
 def cmd(ctx: AppContext) -> None:
-    logging.info('starting...')
+    logging.debug('starting...')
 
-    script = ctx.find_script(ctx.script)
+    script = ctx.config.find_script(ctx.script)
     if script is not None:
         if 'depends-on' in script.options:
             exec_dependencies(ctx, script)
@@ -46,4 +43,4 @@ def cmd(ctx: AppContext) -> None:
     else:
         logging.error(f'Script {ctx.args.script} is not known.')
 
-    logging.info('done.')
+    logging.debug('done.')

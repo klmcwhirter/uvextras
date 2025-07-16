@@ -36,6 +36,8 @@ def parse_args(args: list[str]) -> AppContext:
         description=ls_desc,
         help=ls_desc,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    ls.add_argument('-l', '--locations', default=True, action='store_false', help='list locations')
+    ls.add_argument('-s', '--scripts', default=True, action='store_false', help='list scripts')
     ls.add_argument('-v', '--verbose', default=False, action='store_true', help='enable verbose output')
 
     run_desc = 'run script'
@@ -46,6 +48,7 @@ def parse_args(args: list[str]) -> AppContext:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     run.add_argument('script', default=None, help='name of script to execute')
     run.add_argument('-v', '--verbose', default=False, action='store_true', help='enable verbose output')
+    run.add_argument('args', nargs='*')
 
     pargs = parser.parse_args(args=args)
     ctx = AppContext(args=pargs, config=config)

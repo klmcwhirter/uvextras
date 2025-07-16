@@ -2,7 +2,7 @@
 defaults:
   - config: $HOME/.config/uvextras/uvextras.yaml
   - home: $HOME/.local/share/uvextras
-  - scriptshome: $UVEXTRAS_HOME/scripts
+  - scripts: $UVEXTRAS_HOME/scripts
 
   - localdir: .uvextras
 
@@ -21,17 +21,27 @@ envvars:
       - $HOME/.local/share/uvextras
       - $PWD
 
-  - bind:  scriptshome
-    name: UVEXTRAS_SCRIPTSHOME
+  - bind:  scripts
+    name: UVEXTRAS_SCRIPTS
     resolve:
       - $XDG_DATA_HOME/share/uvextras/scripts
       - $HOME/.local/share/uvextras/scripts
       - $PWD/scripts
 
   - bind: localdir
-    name: UVEXTRAS_LOCAL_DIR
+    name: UVEXTRAS_LOCAL
     resolve:
       - .uvextras
+
+  - bind: localconfig
+    name: UVEXTRAS_LOCAL_CONFIG
+    resolve:
+      - .uvextras/uvextras.yaml
+
+  - bind: localscripts
+    name: UVEXTRAS_LOCAL_SCRIPTS
+    resolve:
+      - .uvextras/scripts
 
 scripts:
   - name: create
@@ -71,9 +81,9 @@ scripts:
       pkgs: autopep8 flake8 mypy pytest pytest-cov tox
 
   - name: gitignore
-    desc: creates .gitignore - override `features` and `add-on` entries in project config
+    desc: creates .gitignore - override `features` and `addons` entries in project config
     cmd: uv run --no-project
     is_local: False
     options:
       features: python
-      # add-ons:
+      # addons:
