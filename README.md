@@ -46,4 +46,5 @@ Inspired by the need for `pdm` _scripts_ feature set and an `uv info` command.
 | *  `clean` | Clean build artifacts - can override configured `items_to_delete` list (`__pycache__`, `*.o`, etc.) |
 | *  `envclean` | Clean environment - can override configured `items_to_delete` list (e.g., `node_modules/`, `.venv/`, etc.) |
 | `create` | re-create venv optionally using `--system-site-packages`  - see `uvextras.yaml` |
+| `enable-dev` | adds dev group pkgs; override `pkgs` in project config |
 | `gitignore` | Generates local `.gitignore` file using `git ignore` alias; override `features` locally (e.g. python,react ) |

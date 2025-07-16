@@ -63,6 +63,13 @@ scripts:
     options:
       items_to_delete: node_modules .venv
 
+  - name: enable-dev
+    desc: adds dev group pkgs; override `pkgs` in project config
+    cmd: uv run --no-project
+    is_local: False
+    options:
+      pkgs: autopep8 flake8 mypy pytest pytest-cov tox
+
   - name: gitignore
     desc: creates .gitignore - override `features` and `add-on` entries in project config
     cmd: uv run --no-project
