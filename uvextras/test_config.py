@@ -79,6 +79,7 @@ def test_AppConfigEnvVarDict_uses_envvar(monkeypatch) -> None:
     assert ev.bind in evd._bound
     assert bound_val == envvar_override
 
+
 def test_AppConfigEnvVarDict_uses_bound(monkeypatch) -> None:
     ev = AppConfigEnvVar(bind='config_module_file', name='OVERRIDE', resolve=['$PWD/uvextras/test_config.py'])
 

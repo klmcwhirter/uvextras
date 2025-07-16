@@ -34,7 +34,7 @@ def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
 
 
 def cmd(ctx: AppContext) -> None:
-    logging.info(f'starting...')
+    logging.info('starting...')
 
     script = ctx.find_script(ctx.script)
     if script is not None:
@@ -46,4 +46,4 @@ def cmd(ctx: AppContext) -> None:
     else:
         logging.error(f'Script {ctx.args.script} is not known.')
 
-    logging.info(f'done.')
+    logging.info('done.')

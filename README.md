@@ -5,28 +5,27 @@ Extra _custom_ features for `uv`
 Inspired by the need for `pdm` _scripts_ feature set and an `uv info` command.
 
 * [Features](#features)
-* [Environment Variables](#environment-variables)
+* [Default Locations](#default-locations)
 * [CLI](#cli)
 * [Built-in Scripts](#built-in-scripts)
 
 ## Features
 
 * _global_ scripts that `uv run` with `--no-project` or not - accessible from anywhere - e.g., `uvextras run clean`
-* _global_ scripts installed to `$UVEXTRAS_HOME/scripts`
-* `uvextras` written in python; entrypoint installed to `$UVEXTRAS_HOME/bin`
-* _global_ config can be overridden by Environment Variables
+* _global_ scripts installed to `$HOME/.local/share/uvextras/scripts`
+* `uvextras` written in python; entrypoint installed to `$HOME/.local/share/uvextras/bin`
 * _global_ (e.g., script) config can be overridden by local `.uvextras/uvextras.yaml` file
 * _local_ scripts merged into list of available scripts by placing in `.uvextras/scripts/` dir
 * `info` command that displays `uvextras` metadata and `uv` metadata (command missing in `uv`)
 
 
-## Environment Variables
+## Default Locations
 
-| Env Var | Default | Comment |
-| --- | --- | --- |
-| `UVEXTRAS_CONFIG` | `~/.config/uvextras/uvextras.yaml` | Config _extras_ features; _global_ defaults |
-| `UVEXTRAS_HOME` | `~/.local/share/uvextras` | dir structure containing extras |
-| `UVEXTRAS_LOCAL_DIR` | `.uvextras` | local dir containing overrides / additions; override parts of config in local `.uvextras/uvextras.yaml` file |
+| Default | Comment |
+|  --- | --- |
+| `$HOME/.config/uvextras/uvextras.yaml` | Config _extras_ features; _global_ defaults |
+| `$HOME/.local/share/uvextras` | dir structure containing extras |
+| `.uvextras` | local dir containing overrides / additions; override parts of config in local `.uvextras/uvextras.yaml` file |
 
 
 ## CLI
