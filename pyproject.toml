@@ -1,0 +1,15 @@
+[project]
+name = "uv-extras"
+version = "0.1.0"
+description = "Extra _custom_ features for `uv`"
+readme = "README.md"
+requires-python = "==3.14.*"
+dependencies = [
+    "rich>=14.0.0",
+    "pyyaml>=6.0.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]
