@@ -9,7 +9,9 @@ from uvextras.context import AppContext
 def parse_args(args: list[str]) -> AppContext:
     config = load_config()
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-f', '--file', default=config.envvars['config'], help='path to the config file')
+
     verbs = parser.add_subparsers(title='verbs', required=True, dest='verb', metavar='(info | init | list | run)')
 
     info_desc = 'show info about `uvextras` sub-system and `uv`'

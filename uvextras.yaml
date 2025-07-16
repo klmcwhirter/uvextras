@@ -24,45 +24,46 @@ envvars:
   - bind:  scriptshome
     name: UVEXTRAS_SCRIPTSHOME
     resolve:
-      - $UVEXTRAS_HOME/scripts
+      - $XDG_DATA_HOME/share/uvextras/scripts
+      - $HOME/.local/share/uvextras/scripts
       - $PWD/scripts
 
   - bind: localdir
     name: UVEXTRAS_LOCAL_DIR
     resolve:
-      - $PWD/.uvextras
+      - .uvextras
 
 scripts:
-  - name: create.py
+  - name: create
     desc: Create .venv optionally --system-site-packages (override `with-system` in project config)
     cmd: uv run --no-project
     is_local: False
     options:
-      with-system: true
+      with-system:
 
   - name: allclean
     desc: runs clean and envclean; similar to distclean
     is_local: False
     options:
       depends-on:
-      - clean.py
-      - envclean.py
+      - clean
+      - envclean
 
-  - name: clean.py
+  - name: clean
     desc: cleans artifacts; override `items_to_delete` in project config
     cmd: uv run --no-project
     is_local: False
     options:
       items_to_delete: build .coverage coverage.xml log .mypy_cache .pdm-build __pycache__ __pypackages__ .pytest_cache .tox
 
-  - name: envclean.py
+  - name: envclean
     desc: cleans environment artifacts; override `items_to_delete` in project config
     cmd: uv run --no-project
     is_local: False
     options:
       items_to_delete: node_modules .venv
 
-  - name: gitignore.py
+  - name: gitignore
     desc: creates .gitignore - override `features` and `add-on` entries in project config
     cmd: uv run --no-project
     is_local: False

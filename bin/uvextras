@@ -1,0 +1,5 @@
+#!/bin/bash
+
+root=$(dirname $(dirname $0))
+
+PYTHONPATH=$root:$PYTHONPATH uv run python -m uvextras $@

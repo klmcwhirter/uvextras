@@ -18,11 +18,13 @@ def exec_dependencies(ctx: AppContext, script: AppConfigScript) -> None:
 
 
 def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
-    options = [
-        f'--{o} "{v}"'
-        for o, v in script.options.items()
-    ]
+    options = []
+    for o, v in script.options.items():
+        v = f' "{v}"' if v is not None else ""
+        options.append(f'--{o}{v}')
+
     script_path = script.name if script.is_local else f'{ctx.config.envvars['scriptshome']}/{script.name}'
+    script_path = f'{script_path}.py' if not script_path.endswith('.py') else script_path
     cmd = f'{script.cmd} {script_path} {" ".join(options)}'
 
     if ctx.verbose:

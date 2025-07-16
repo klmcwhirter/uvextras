@@ -116,8 +116,13 @@ BOOTSTRAP_CONFIG = {
 
 
 def load_config() -> AppConfig:
-    file = 'uvextras.yaml'
+    config_file = os.path.expandvars(BOOTSTRAP_CONFIG['config'])
+    file = config_file if os.path.exists(config_file) else 'uvextras.yaml'
 
+    return load_config_for(file)
+
+
+def load_config_for(file: str) -> AppConfig:
     from yaml import Loader, load
     with open(file, 'rb') as f:
         data = load(f, Loader=Loader)
