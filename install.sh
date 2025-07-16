@@ -19,5 +19,5 @@ then
     cp uvextras.yaml ${HOME}/.config/uvextras/
 
     cd ${HOME}/.local/share/uvextras/
-    uvextras run -v create
+    uvextras run create
 fi

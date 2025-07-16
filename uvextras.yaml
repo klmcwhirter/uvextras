@@ -69,4 +69,4 @@ scripts:
     is_local: False
     options:
       features: python
-      add-on: .pdm-python
+      # add-ons:
