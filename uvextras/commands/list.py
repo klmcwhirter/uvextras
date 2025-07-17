@@ -2,6 +2,7 @@
 import logging
 from pathlib import Path
 
+from rich import box
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -35,6 +36,10 @@ def cmd(ctx: AppContext) -> None:
     logging.debug('done.')
 
 
+def checkmark_if(pred: bool) -> str:
+    return ':heavy_check_mark:' if pred else ''
+
+
 def normalize_path(ctx: AppContext, path: Path) -> Text:
     text = Text()
 
@@ -54,7 +59,7 @@ def normalize_path(ctx: AppContext, path: Path) -> Text:
 def print_locations(ctx: AppContext, console: Console) -> None:
     console.print()
 
-    table = Table(title='Locations', title_justify='left', show_lines=True)
+    table = Table(title='Locations', title_justify='left', show_lines=True, box=box.ROUNDED)
 
     table.add_column('Type', style=COLOR_SCRIPT_LOC)
     table.add_column('Path')
@@ -68,18 +73,31 @@ def print_locations(ctx: AppContext, console: Console) -> None:
 def print_scripts(ctx: AppContext, console: Console) -> None:
     console.print()
 
-    table = Table(title='Scripts', title_justify='left', show_lines=True)
+    table = Table(title='Scripts', title_justify='left', show_lines=True, box=box.ROUNDED)
 
     table.add_column('Name', style=COLOR_SCRIPT_NAME)
+    table.add_column('Depends')
     table.add_column('Desc')
-    table.add_column('Local?', justify='center', style='bold green1')
-    table.add_column('Cmd')
-    table.add_column('Path')
-    table.add_column('Options')
+    table.add_column('Local', justify='center', style='bold green1')
 
-    for s in ctx.config.scripts:
-        script_path = normalize_path(ctx, s.path(ctx.config.envvars))
+    if ctx.details:
+        table.add_column('Cmd')
+
+    table.add_column('Python ', justify='center', style='bold green1')
+
+    if ctx.details:
+        table.add_column('Path')
+        table.add_column('Options')
+
+    for s in sorted(ctx.config.scripts, key=lambda s: s.name):
         name = Text(s.name, style='bold') if s.is_local else s.name
-        table.add_row(name, s.desc, ':heavy_check_mark:' if s.is_local else '', s.cmd, script_path, s.options_str)
+        depends = Text('\n'.join(s.depends_on), style='bold on wheat1') if s.depends_on else ''
+
+        if ctx.details:
+            script_path = normalize_path(ctx, s.path(ctx.config.envvars)) if s.use_python else ''
+            options = '\n--'.join(s.options_str.split(' --'))
+            table.add_row(name, depends, s.desc, checkmark_if(s.is_local), s.cmd, checkmark_if(s.use_python), script_path, options)
+        else:
+            table.add_row(name, depends, s.desc, checkmark_if(s.is_local), checkmark_if(s.use_python))
 
     console.print(table)

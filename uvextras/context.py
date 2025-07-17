@@ -2,12 +2,11 @@
 import argparse
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from rich.logging import RichHandler
 from rich.pretty import pprint
 
-from uvextras.config import AppConfig, AppConfigScript
+from uvextras.config import AppConfig
 
 
 @dataclass
@@ -21,6 +20,10 @@ class AppContext:
     def __rich_repr__(self):
         yield 'args', self.args
         yield 'config', self.config
+
+    @property
+    def details(self) -> str:
+        return self.args.details
 
     @property
     def script(self) -> str:

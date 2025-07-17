@@ -8,7 +8,7 @@ from uvextras.context import AppContext
 
 
 def exec_dependencies(ctx: AppContext, script: AppConfigScript) -> None:
-    for name in script.options['depends-on']:
+    for name in script.depends_on:
         dscript = ctx.config.find_script(name)
         if dscript is not None:
             exec_script(ctx, dscript)
@@ -17,8 +17,11 @@ def exec_dependencies(ctx: AppContext, script: AppConfigScript) -> None:
 
 
 def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
-    extra_args = ' '.join(ctx.args.args) if ctx.args.args else ''
-    cmd = f'{script.cmd} {script.path(ctx.config.envvars)} {script.options_str} {extra_args}'
+    # this is needed to pass args through to cmd executed by script
+    preamble = '-- ' if script.use_python else ''
+    extra_args = preamble + ' '.join(ctx.args.args) if ctx.args.args else ''
+    script_path = script.path(ctx.config.envvars) if script.use_python else ''
+    cmd = f'{script.cmd} {script_path} {script.options_str} {extra_args}'
 
     if ctx.verbose:
         print(cmd)
@@ -35,7 +38,7 @@ def cmd(ctx: AppContext) -> None:
 
     script = ctx.config.find_script(ctx.script)
     if script is not None:
-        if 'depends-on' in script.options:
+        if script.depends_on:
             exec_dependencies(ctx, script)
 
         if script.cmd is not None:

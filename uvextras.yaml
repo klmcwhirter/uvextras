@@ -47,43 +47,43 @@ scripts:
   - name: create
     desc: Create .venv optionally --system-site-packages (override `with-system` in project config)
     cmd: uv run --no-project
-    is_local: False
+    is-local: false
     options:
       with-system:
 
   - name: allclean
     desc: runs clean and envclean; similar to distclean
-    is_local: False
-    options:
-      depends-on:
-      - clean
-      - envclean
+    depends-on:
+    - clean
+    - envclean
+    use-python: false
+    is-local: false
 
   - name: clean
     desc: cleans artifacts; override `items_to_delete` in project config
-    cmd: uv run --no-project
-    is_local: False
+    cmd: uv run
+    is-local: false
     options:
       items_to_delete: build .coverage coverage.xml log .mypy_cache .pdm-build __pycache__ __pypackages__ .pytest_cache .tox
 
   - name: envclean
     desc: cleans environment artifacts; override `items_to_delete` in project config
-    cmd: uv run --no-project
-    is_local: False
+    cmd: uv run
+    is-local: false
     options:
-      items_to_delete: node_modules .venv
+      items_to_delete: node_modules/ .venv/
 
   - name: enable-dev
     desc: adds dev group pkgs; override `pkgs` in project config
-    cmd: uv run --no-project
-    is_local: False
+    cmd: uv run
+    is-local: false
     options:
       pkgs: autopep8 flake8 mypy pytest pytest-cov tox
 
   - name: gitignore
     desc: creates .gitignore - override `features` and `addons` entries in project config
     cmd: uv run --no-project
-    is_local: False
+    is-local: false
     options:
       features: python
       # addons:

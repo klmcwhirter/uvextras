@@ -64,14 +64,18 @@ class AppConfigEnvVarDict(dict[str, Any]):
 class AppConfigScript:
     name: str
     desc: str
+    depends_on: list[str]
     cmd: str
+    use_python: bool
     is_local: bool
     options: dict[str, Any]
 
     def __rich_repr__(self):
         yield 'name', self.name
         yield 'desc', self.desc
+        yield 'depends_on', self.depends_on
         yield 'cmd', self.cmd
+        yield 'use_python', self.use_python
         yield 'is_local', self.is_local
         yield 'options', self.options
 
@@ -83,9 +87,13 @@ class AppConfigScript:
             options.append(f'--{o}{v}')
         return ' '.join(options)
 
-    def override_options(self, other: Self) -> None:
+    def merge(self, other: Self) -> None:
         for o in other.options:
+            # override any specified options
             self.options[o] = other.options[o]
+
+        if other.depends_on:
+            self.depends_on.extend(other.depends_on)
 
     def path(self, envvars: AppConfigEnvVarDict) -> Path:
         script_path = f'{envvars['localscripts']}/{self.name}' if self.is_local else f'{envvars['scripts']}/{self.name}'
@@ -114,10 +122,12 @@ class AppConfig:
     def merge(self, other: Self) -> None:
         for s in other.scripts:
             if not s.is_local:
-                # override options
+                # merge options and depends_on
                 gs = self.find_script(s.name)
                 if gs is not None:
-                    gs.override_options(s)
+                    gs.merge(s)
+                else:
+                    print(f'merge: script {s.name} not found')
             else:
                 self.scripts.append(s)
 
@@ -139,8 +149,10 @@ class AppConfig:
             self.scripts.extend(
                 AppConfigScript(
                     name=name,
-                    cmd='uv run',
                     desc=desc,
+                    depends_on=[],
+                    cmd='uv run',
+                    use_python=True,
                     is_local=True,
                     options={}
                 )
@@ -162,8 +174,10 @@ class AppConfig:
             AppConfigScript(
                 name=s.get('name'),
                 cmd=s.get('cmd'),
+                depends_on=s.get('depends-on', []),
+                use_python=s.get('use-python', True),
                 desc=s.get('desc', ''),
-                is_local=s.get('is_local', True),
+                is_local=s.get('is-local', True),
                 options=s.get('options', {}),
             )
             for s in data.get('scripts', [])]
