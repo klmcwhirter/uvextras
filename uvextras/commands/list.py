@@ -89,7 +89,11 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
         table.add_column('Path')
         table.add_column('Options')
 
-    for s in sorted(ctx.config.scripts, key=lambda s: s.name):
+    scripts = ctx.config.scripts
+    if ctx.local:
+        scripts = (s for s in scripts if s.is_local)
+
+    for s in sorted(scripts, key=lambda s: s.name):
         name = Text(s.name, style='bold') if s.is_local else s.name
         depends = Text('\n'.join(s.depends_on), style='bold on wheat1') if s.depends_on else ''
 

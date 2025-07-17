@@ -26,6 +26,10 @@ class AppContext:
         return self.args.details
 
     @property
+    def local(self) -> str:
+        return self.args.local
+
+    @property
     def script(self) -> str:
         return self.args.script
 

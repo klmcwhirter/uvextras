@@ -37,6 +37,7 @@ def parse_args(args: list[str]) -> AppContext:
         help=ls_desc,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ls.add_argument('-d', '--details', default=False, action='store_true', help='list details')
+    ls.add_argument('--local', default=False, action='store_true', help='list local only')
     ls.add_argument('-l', '--locations', default=True, action='store_false', help='list locations')
     ls.add_argument('-s', '--scripts', default=True, action='store_false', help='list scripts')
     ls.add_argument('-v', '--verbose', default=False, action='store_true', help='enable verbose output')
