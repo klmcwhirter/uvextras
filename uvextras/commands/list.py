@@ -72,13 +72,14 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
 
     table.add_column('Name', style=COLOR_SCRIPT_NAME)
     table.add_column('Desc')
-    table.add_column('Local?', justify='center')
+    table.add_column('Local?', justify='center', style='bold green1')
     table.add_column('Cmd')
     table.add_column('Path')
     table.add_column('Options')
 
     for s in ctx.config.scripts:
         script_path = normalize_path(ctx, s.path(ctx.config.envvars))
-        table.add_row(s.name, s.desc, ':white_check_mark:' if s.is_local else '', s.cmd, script_path, s.options_str)
+        name = Text(s.name, style='bold') if s.is_local else s.name
+        table.add_row(name, s.desc, ':heavy_check_mark:' if s.is_local else '', s.cmd, script_path, s.options_str)
 
     console.print(table)
