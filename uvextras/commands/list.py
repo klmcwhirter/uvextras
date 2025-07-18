@@ -1,6 +1,6 @@
 
 import logging
-from pathlib import Path
+import os
 
 from rich import box
 from rich.console import Console
@@ -9,6 +9,7 @@ from rich.text import Text
 
 from uvextras.context import AppContext
 
+COLOR_KEYWORD = 'bold yellow'
 COLOR_SCRIPT_LOC = 'blue3'
 COLOR_SCRIPT_NAME = 'dark_red'
 
@@ -40,15 +41,23 @@ def checkmark_if(pred: bool) -> str:
     return ':heavy_check_mark:' if pred else ''
 
 
-def normalize_path(ctx: AppContext, path: Path) -> Text:
+HOME = os.environ['HOME']
+
+
+def normalize_loc(loc: str) -> Text:
+    return Text('$HOME', style='bold yellow').append(loc.removeprefix(HOME), style='not bold default') \
+        if loc.startswith(HOME) \
+        else Text(loc)
+
+
+def normalize_path(ctx: AppContext, path: str) -> Text:
     text = Text()
 
-    normalized_path = str(path)
-
+    normalized_path = path
     for loc in ['scripts', 'localscripts']:
-        if normalized_path.startswith(ctx.config.envvars[loc]):
+        if path.startswith(ctx.config.envvars[loc]):
             text.append(f'[{loc}]', style=COLOR_SCRIPT_LOC)
-            normalized_path = normalized_path.removeprefix(ctx.config.envvars[loc])
+            normalized_path = path.removeprefix(ctx.config.envvars[loc])
             break
 
     text.append(normalized_path)
@@ -65,7 +74,7 @@ def print_locations(ctx: AppContext, console: Console) -> None:
     table.add_column('Path')
 
     for loc in locations:
-        table.add_row(loc, ctx.config.envvars[loc])
+        table.add_row(loc, normalize_loc(ctx.config.envvars[loc]))
 
     console.print(table)
 
@@ -94,11 +103,11 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
         scripts = (s for s in scripts if s.is_local)
 
     for s in sorted(scripts, key=lambda s: s.name):
-        name = Text(s.name, style='bold') if s.is_local else s.name
+        name = Text(s.name, style='bold magenta') if s.is_local else s.name
         depends = Text('\n'.join(s.depends_on), style='bold on wheat1') if s.depends_on else ''
 
         if ctx.details:
-            script_path = normalize_path(ctx, s.path(ctx.config.envvars)) if s.use_python else ''
+            script_path = normalize_path(ctx, str(s.path(ctx.config.envvars))) if s.use_python else ''
             options = '\n--'.join(s.options_str.split(' --'))
             table.add_row(name, depends, s.desc, checkmark_if(s.is_local), s.cmd, checkmark_if(s.use_python), script_path, options)
         else:
