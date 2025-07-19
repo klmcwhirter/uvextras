@@ -73,13 +73,16 @@ def normalize_path(ctx: AppContext, path: str, locations: list[str]) -> Text | s
     return rc
 
 
-def shell_cli_output(cmd: str) -> str:
-    return subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True, encoding='utf-8', text=True)
+def shell_cli_output(cmd: str, redirect_stderr=False) -> str:
+    stderr = subprocess.STDOUT if redirect_stderr else None
+    return subprocess.check_output(cmd, stderr=stderr, shell=True, encoding='utf-8', text=True).strip()
 
 
 def uv_info(ctx: AppContext) -> Mapping[str, Text | str]:
     rc = {
         'UV Version': shell_cli_output('uv self version'),
+        'Python Version': shell_cli_output('uv run --active python --version'),
+        'Python Location': normalize_home(shell_cli_output('readlink `uv run --active which python`')),
         'Project Version': shell_cli_output('uv version'),
         'Cache Dir': normalize_home(shell_cli_output('uv cache dir')),
         'Tool Dir': normalize_home(shell_cli_output('uv tool dir')),
@@ -87,7 +90,7 @@ def uv_info(ctx: AppContext) -> Mapping[str, Text | str]:
 
     if ctx.details:
         rc |= {
-            'Tool(s) Installed': shell_cli_output('uv tool list'),
+            'Tool(s) Installed': shell_cli_output('uv tool list', redirect_stderr=True),
             'Project Dependencies': shell_cli_output('uv tree --depth 1')
         }
 
