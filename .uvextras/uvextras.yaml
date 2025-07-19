@@ -1,0 +1,6 @@
+scripts:
+
+  - name: enable-dev
+    is-local: false
+    options:
+      pkgs: autopep8 flake8 mypy pytest pytest-cov tox types-PyYaml

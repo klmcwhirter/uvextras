@@ -34,7 +34,6 @@ Inspired by the need for `pdm` _scripts_ feature set and an `uv info` command.
 | --- | --- |
 | `info` | show info about `uvextras` sub-system and `uv` |
 | `init` | wraps `uv init` with global default options |
-| `list` | show lists of objects (e.g., blended scripts list) |
 | `run` | run script |
 
 

@@ -30,7 +30,10 @@ def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
     environ = os.environ.copy()
     del environ['VIRTUAL_ENV']
 
-    subprocess.call(cmd, shell=True, env=environ, text=ctx.verbose)
+    try:
+        subprocess.call(cmd, shell=True, env=environ, text=ctx.verbose)
+    except KeyboardInterrupt:
+        pass
 
 
 def cmd(ctx: AppContext) -> None:

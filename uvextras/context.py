@@ -22,16 +22,28 @@ class AppContext:
         yield 'config', self.config
 
     @property
-    def details(self) -> str:
-        return self.args.details
+    def all(self) -> bool:
+        return self.args.all if hasattr(self.args, 'all') else False
 
     @property
-    def local(self) -> str:
-        return self.args.local
+    def details(self) -> bool:
+        return self.args.details if hasattr(self.args, 'details') else False
+
+    @property
+    def locations(self) -> bool:
+        return self.args.locations if hasattr(self.args, 'locations') else False
 
     @property
     def script(self) -> str:
         return self.args.script
+
+    @property
+    def scripts(self) -> bool:
+        return self.args.scripts if hasattr(self.args, 'scripts') else False
+
+    @property
+    def uv(self) -> bool:
+        return self.args.uv if hasattr(self.args, 'uv') else False
 
     @property
     def verb(self) -> str:
