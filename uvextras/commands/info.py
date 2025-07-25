@@ -1,4 +1,3 @@
-
 import logging
 import os
 import subprocess
@@ -42,7 +41,6 @@ def normalize_envvar(name: str) -> Text:
 
 
 def normalize_home(loc: str) -> Text | str:
-
     rc: Text | str = loc
 
     if loc.startswith(HOME):
@@ -91,7 +89,7 @@ def uv_info(ctx: AppContext) -> Mapping[str, Text | str]:
     if ctx.details:
         rc |= {
             'Tool(s) Installed': shell_cli_output('uv tool list', redirect_stderr=True),
-            'Project Dependencies': shell_cli_output('uv tree --depth 1')
+            'Project Dependencies': shell_cli_output('uv tree --depth 1'),
         }
 
     return rc
@@ -148,11 +146,15 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
         depends = Text('\n'.join(s.depends_on), style=STYLE_HIGHLIGHT) if s.depends_on else ''
 
         if ctx.details:
-            script_path = normalize_path(
-                ctx=ctx,
-                path=str(s.path(ctx.config.envvars)),
-                locations=['scripts', 'localscripts']
-            ) if s.use_python else ''
+            script_path = (
+                normalize_path(
+                    ctx=ctx,
+                    path=str(s.path(ctx.config.envvars)),
+                    locations=['scripts', 'localscripts'],
+                )
+                if s.use_python
+                else ''
+            )
             options = '\n--'.join(s.options_str.split(' --'))
             table.add_row(name, depends, s.desc, checkmark_if(s.is_local), s.cmd, checkmark_if(s.use_python), script_path, options)
         else:

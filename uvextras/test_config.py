@@ -1,14 +1,8 @@
-
 import os
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
-from uvextras.config import (
-    AppConfigEnvVar,
-    AppConfigEnvVarDict,
-    resolve_envvar
-)
-
+from uvextras.config import AppConfigEnvVar, AppConfigEnvVarDict, resolve_envvar
 
 @contextmanager
 def temp_envvar(key: str, value: str):
@@ -26,7 +20,7 @@ def temp_envvar(key: str, value: str):
 
 
 def test_resolve_envvar_resolves_path() -> None:
-    ev = AppConfigEnvVar(bind='config_module_file', name="OVERRIDE", resolve=['$PWD/uvextras/test_config.py'])
+    ev = AppConfigEnvVar(bind='config_module_file', name='OVERRIDE', resolve=['$PWD/uvextras/test_config.py'])
     bind, resolved = resolve_envvar(ev)
 
     assert bind == ev.bind

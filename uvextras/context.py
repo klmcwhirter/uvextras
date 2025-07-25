@@ -1,4 +1,3 @@
-
 import argparse
 import logging
 from dataclasses import dataclass
@@ -57,7 +56,8 @@ class AppContext:
         log_level = logging.DEBUG if self.verbose else logging.INFO
         logging.basicConfig(
             level=log_level,
-            format='{asctime} - {module} - {funcName} - {message}', style='{',
+            format='{asctime} - {module} - {funcName} - {message}',
+            style='{',
             handlers=[RichHandler(omit_repeated_times=False, rich_tracebacks=True, tracebacks_show_locals=True)],
         )
 

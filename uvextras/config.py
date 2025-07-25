@@ -1,4 +1,4 @@
-'''The configuration concepts'''
+"""The configuration concepts"""
 
 import os
 from dataclasses import dataclass, field
@@ -83,7 +83,7 @@ class AppConfigScript:
     def options_str(self) -> str:
         options = []
         for o, v in self.options.items():
-            v = f' "{v}"' if v is not None else ""
+            v = f' "{v}"' if v is not None else ''
             options.append(f'--{o}{v}')
         return ' '.join(options)
 
@@ -96,7 +96,7 @@ class AppConfigScript:
             self.depends_on.extend(other.depends_on)
 
     def path(self, envvars: AppConfigEnvVarDict) -> Path:
-        script_path = f'{envvars['localscripts']}/{self.name}' if self.is_local else f'{envvars['scripts']}/{self.name}'
+        script_path = f'{envvars["localscripts"]}/{self.name}' if self.is_local else f'{envvars["scripts"]}/{self.name}'
         script_path = f'{script_path}.py' if not script_path.endswith('.py') else script_path
         return Path(script_path)
 
@@ -154,21 +154,23 @@ class AppConfig:
                     cmd='uv run',
                     use_python=True,
                     is_local=True,
-                    options={}
+                    options={},
                 )
                 for name in filtered_script_names
             )
 
     @staticmethod
     def from_yaml(data: dict[str, Any]) -> AppConfig:
-        envvars = AppConfigEnvVarDict(envvars=[
-            AppConfigEnvVar(
-                bind=ev.get('bind', ''),
-                name=ev.get('name', ''),
-                resolve=ev.get('resolve'),
-            )
-            for ev in data.get('envvars', [])
-        ])
+        envvars = AppConfigEnvVarDict(
+            envvars=[
+                AppConfigEnvVar(
+                    bind=ev.get('bind', ''),
+                    name=ev.get('name', ''),
+                    resolve=ev.get('resolve'),
+                )
+                for ev in data.get('envvars', [])
+            ]
+        )
 
         scripts = [
             AppConfigScript(
@@ -180,14 +182,15 @@ class AppConfig:
                 is_local=s.get('is-local', True),
                 options=s.get('options', {}),
             )
-            for s in data.get('scripts', [])]
+            for s in data.get('scripts', [])
+        ]
         return AppConfig(envvars, scripts)
 
 
 BOOTSTRAP_CONFIG = {
     'config': '$HOME/.config/uvextras/uvextras.yaml',
     'home': '$HOME/.local/share/uvextras',
-    'localdir': '.uvextras'
+    'localdir': '.uvextras',
 }
 
 
@@ -209,6 +212,7 @@ def load_config() -> AppConfig:
 
 def load_config_for(file: str) -> AppConfig:
     from yaml import Loader, load
+
     with open(file, 'rb') as f:
         data = load(f, Loader=Loader)
     config = AppConfig.from_yaml(data)
