@@ -27,7 +27,10 @@ def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
 
     # disable venv
     environ = os.environ.copy()
-    del environ['VIRTUAL_ENV']
+    if 'PYTHONPATH' in environ:
+        del environ['PYTHONPATH']
+    if 'VIRTUAL_ENV' in environ:
+        del environ['VIRTUAL_ENV']
 
     try:
         subprocess.call(cmd, shell=True, env=environ, text=ctx.verbose)

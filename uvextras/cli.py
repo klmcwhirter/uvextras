@@ -18,9 +18,9 @@ def parse_args(args: list[str]) -> AppContext:
     info = verbs.add_parser('info', description=info_desc, help=info_desc, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     info.add_argument('--all', default=False, action='store_true', help='show local and global scripts')
     info.add_argument('-d', '--details', default=False, action='store_true', help='show details')
+    info.add_argument('-i', '--info', default=False, action='store_true', help='hide info table')
     info.add_argument('-l', '--locations', default=False, action='store_true', help='hide locations')
     info.add_argument('-s', '--scripts', default=False, action='store_true', help='hide scripts')
-    info.add_argument('-u', '--uv', default=False, action='store_true', help='hide uv info')
     info.add_argument('-v', '--verbose', default=False, action='store_true', help='enable verbose output')
 
     init_desc = 'wraps `uv init` with global default options'

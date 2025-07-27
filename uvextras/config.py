@@ -187,18 +187,19 @@ class AppConfig:
         return AppConfig(envvars, scripts)
 
 
-BOOTSTRAP_CONFIG = {
-    'config': '$HOME/.config/uvextras/uvextras.yaml',
-    'home': '$HOME/.local/share/uvextras',
-    'localdir': '.uvextras',
-}
-
-
 def load_config() -> AppConfig:
-    config_file = os.path.expandvars(BOOTSTRAP_CONFIG['config'])
-    file = config_file if os.path.exists(config_file) else 'uvextras.yaml'
-
-    config = load_config_for(file)
+    # bootstrap config - copied from uvextras.yaml
+    config_ev = AppConfigEnvVar(
+        bind='config',
+        name='UVEXTRAS_CONFIG',
+        resolve=[
+            '$XDG_CONFIG_HOME/uvextras/uvextras.yaml',
+            '$HOME/.config/uvextras/uvextras.yaml',
+            '$PWD/uvextras.yaml',
+        ],
+    )
+    _, config_file = resolve_envvar(config_ev)
+    config = load_config_for(config_file)
 
     local_config = config.envvars['localconfig']
     if os.path.exists(local_config):

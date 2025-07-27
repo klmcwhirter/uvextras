@@ -1,11 +1,4 @@
 
-defaults:
-  - config: $HOME/.config/uvextras/uvextras.yaml
-  - home: $HOME/.local/share/uvextras
-  - scripts: $UVEXTRAS_HOME/scripts
-
-  - localdir: .uvextras
-
 envvars:
   - bind: config
     name: UVEXTRAS_CONFIG

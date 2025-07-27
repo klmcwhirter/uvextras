@@ -30,14 +30,71 @@ Inspired by the need for `pdm` _scripts_ feature set and an `uv info` command.
 
 ## CLI
 
-| Verb | Comment |
-| --- | --- |
-| `info` | show info about `uvextras` sub-system and `uv` |
-| `init` | wraps `uv init` with global default options |
-| `run` | run script |
+```
+usage: python3 -m uvextras [-h] [-f FILE] (info | init | run) ...
 
+options:
+  -h, --help           show this help message and exit
+  -f, --file FILE      path to the config file (default:
+                       /var/home/klmcw/.config/uvextras/uvextras.yaml)
+
+verbs:
+  (info | init | run)
+    info               show info about `uvextras` sub-system and `uv`
+    init               wraps `uv init` with global default options
+    run                run script
+```
+
+### info
+
+```
+usage: python3 -m uvextras info [-h] [--all] [-d] [-i] [-l] [-s] [-v]
+
+show info about `uvextras` sub-system and `uv`
+
+options:
+  -h, --help       show this help message and exit
+  --all            show local and global scripts (default: False)
+  -d, --details    show details (default: False)
+  -i, --info       hide info table (default: False)
+  -l, --locations  hide locations (default: False)
+  -s, --scripts    hide scripts (default: False)
+  -v, --verbose    enable verbose output (default: False)
+```
+
+### init
+
+_`init` is a work in progress_
+
+```
+usage: python3 -m uvextras init [-h] [-v]
+
+wraps `uv init` with global default options
+
+options:
+  -h, --help     show this help message and exit
+  -v, --verbose  enable verbose output (default: False)
+```
+
+### run
+
+```
+usage: python3 -m uvextras run [-h] [-v] script [args ...]
+
+run script
+
+positional arguments:
+  script         name of script to execute
+  args
+
+options:
+  -h, --help     show this help message and exit
+  -v, --verbose  enable verbose output (default: False)
+```
 
 ## Built-in Scripts
+
+These are defined in [`uvextras.yaml`](./uvextras.yaml) and installed to `$HOME/.local/share/uvextras`.
 
 | Script | Comment |
 | --- | --- |

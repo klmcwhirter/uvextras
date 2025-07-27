@@ -17,6 +17,7 @@ STYLE_SCRIPT_LOC = 'blue3'
 STYLE_SCRIPT_NAME = 'dark_red'
 STYLE_SCRIPT_LOCAL_NAME = 'bold magenta'
 STYLE_UV_KEY = 'bold spring_green4'
+STYLE_UV_SEC = 'bold gray50'
 
 locations = [
     'config',
@@ -35,8 +36,14 @@ def checkmark_if(pred: bool) -> str:
 HOME = os.environ['HOME']
 
 
-def normalize_envvar(name: str) -> Text:
-    rc = Text(f'${name}', style=STYLE_KEYWORD if name in os.environ else f'{STYLE_KEYWORD} not bold')
+def normalize_envvar(name: str, style_if_not_set: str = STYLE_KEYWORD, highlight_if_set: str | None = None) -> Text:
+    name_word = f'${name}'
+
+    rc = Text(name_word, style=style_if_not_set)
+
+    if name in os.environ and highlight_if_set:
+        rc.highlight_words(name_word, style=highlight_if_set)
+
     return rc
 
 
@@ -77,22 +84,40 @@ def shell_cli_output(cmd: str, redirect_stderr=False) -> str:
 
 
 def uv_info(ctx: AppContext) -> Mapping[str, Text | str]:
-    rc = {
-        'UV Version': shell_cli_output('uv self version'),
+    uvextras = {
+        'Version': shell_cli_output(f'uv --project {ctx.config.envvars["home"]} version'),
+        'Python Version': shell_cli_output(f'uv run --project {ctx.config.envvars["home"]} python --version'),
+        'Python Location': normalize_home(
+            shell_cli_output(f'readlink `uv run --project {ctx.config.envvars["home"]} which python`')
+        ),
+    }
+    project = {
+        'Version': shell_cli_output('uv version'),
         'Python Version': shell_cli_output('uv run --active python --version'),
         'Python Location': normalize_home(shell_cli_output('readlink `uv run --active which python`')),
-        'Project Version': shell_cli_output('uv version'),
+    }
+
+    if ctx.details:
+        project |= {
+            'Dependencies': shell_cli_output('uv tree --all-groups --depth 1'),
+        }
+
+    uv = {
+        'Version': shell_cli_output('uv self version'),
         'Cache Dir': normalize_home(shell_cli_output('uv cache dir')),
         'Tool Dir': normalize_home(shell_cli_output('uv tool dir')),
     }
 
     if ctx.details:
-        rc |= {
+        uv |= {
             'Tool(s) Installed': shell_cli_output('uv tool list', redirect_stderr=True),
-            'Project Dependencies': shell_cli_output('uv tree --depth 1'),
         }
 
-    return rc
+    return {
+        'uv': uv,
+        'uvextras': uvextras,
+        'Project': project,
+    }
 
 
 def print_locations(ctx: AppContext, console: Console) -> None:
@@ -111,7 +136,15 @@ def print_locations(ctx: AppContext, console: Console) -> None:
         loc = ev.bind
 
         if ctx.details:
-            table.add_row(loc, normalize_envvar(ev.name), normalize_loc(ctx, ctx.config.envvars[loc]))
+            table.add_row(
+                loc,
+                normalize_envvar(
+                    ev.name,
+                    style_if_not_set=f'{STYLE_KEYWORD} not bold dim',
+                    highlight_if_set=f'default {STYLE_KEYWORD} bold on wheat1',
+                ),
+                normalize_loc(ctx, ctx.config.envvars[loc]),
+            )
         else:
             table.add_row(loc, normalize_loc(ctx, ctx.config.envvars[loc]))
 
@@ -166,13 +199,16 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
 def print_uv_table(map: Mapping[str, Text | str], console: Console) -> None:
     console.print()
 
-    table = Table(title='UV Info', title_justify='left', show_lines=True, box=box.ROUNDED)
+    table = Table(title='Info', title_justify='left', show_lines=True, box=box.ROUNDED)
 
     table.add_column('Item', style=STYLE_UV_KEY)
     table.add_column('Value')
 
-    for k, v in map.items():
-        table.add_row(k, v)
+    for s, m in map.items():
+        table.add_row(Text(s.upper(), style=STYLE_UV_SEC), end_section=True)
+
+        for k, v in m.items():
+            table.add_row('  ' + k, v)
 
     console.print(table)
 
@@ -182,13 +218,13 @@ def cmd(ctx: AppContext) -> None:
 
     console = Console()
 
-    if not ctx.uv:
+    if not ctx.hide_uv:
         print_uv_table(uv_info(ctx), console)
 
-    if not ctx.locations:
+    if not ctx.hide_locations:
         print_locations(ctx, console)
 
-    if not ctx.scripts:
+    if not ctx.hide_scripts:
         print_scripts(ctx, console)
 
     logging.debug('done.')
