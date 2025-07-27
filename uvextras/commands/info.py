@@ -85,31 +85,45 @@ def normalize_user_home(text: str) -> Text | str:
     return normalize_envvar_dir(text, 'HOME', os.environ['HOME'])
 
 
+def normalize_uv_or_home(text: str, uv_py_dir: str) -> Text | str:
+    rc = normalize_envvar_dir(text, 'UV_PYTHON_INSTALL_DIR', uv_py_dir)
+
+    if isinstance(rc, str):
+        # try home
+        rc = normalize_user_home(rc)
+
+    return rc
+
+
 def shell_cli_output(cmd: str, redirect_stderr=False) -> str:
     stderr = subprocess.STDOUT if redirect_stderr else None
     return subprocess.check_output(cmd, stderr=stderr, shell=True, encoding='utf-8', text=True).strip()
 
 
 def uv_info(ctx: AppContext) -> Mapping[str, Text | Group | str]:
+    uv_py_dir = shell_cli_output('uv python dir')
+
     uvextras = {
         'Version': shell_cli_output(f'uv --project {ctx.config.envvars["home"]} version'),
         'Python Version': shell_cli_output(f'uv run --project {ctx.config.envvars["home"]} python --version'),
-        'Python Location': normalize_user_home(
-            shell_cli_output(f'readlink `uv run --project {ctx.config.envvars["home"]} which python`')
+        'Python Location': normalize_uv_or_home(
+            shell_cli_output(f'readlink `uv run --project {ctx.config.envvars["home"]} which python`'),
+            uv_py_dir,
         ),
     }
     project = {
         'Version': shell_cli_output('uv version'),
         'Python Version': shell_cli_output('uv run --active python --version'),
-        'Python Location': normalize_user_home(shell_cli_output('readlink `uv run --active which python`')),
+        'Python Location': normalize_uv_or_home(
+            shell_cli_output('readlink `uv run --active which python`'),
+            uv_py_dir,
+        ),
     }
 
     if ctx.details:
         project |= {
             'Dependencies': shell_cli_output('uv tree --all-groups --depth 1'),
         }
-
-    uv_py_dir = shell_cli_output('uv python dir')
 
     uv = {
         'Version': shell_cli_output('uv self version'),
@@ -120,7 +134,7 @@ def uv_info(ctx: AppContext) -> Mapping[str, Text | Group | str]:
 
     if ctx.details:
         py_vers = shell_cli_output('uv python list --only-installed --managed-python', redirect_stderr=True)
-        uv_python_vers = [normalize_envvar_dir(ln, 'UV_PYTHON_INSTALL_DIR', uv_py_dir) for ln in py_vers.splitlines()]
+        uv_python_vers = [normalize_uv_or_home(ln, uv_py_dir) for ln in py_vers.splitlines()]
 
         uv |= {
             'Python Version(s) Installed': Group(*uv_python_vers),
