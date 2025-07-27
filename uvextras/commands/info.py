@@ -1,10 +1,11 @@
 import logging
 import os
+import re
 import subprocess
 from typing import Mapping
 
 from rich import box
-from rich.console import Console
+from rich.console import Console, Group
 from rich.table import Table
 from rich.text import Text
 
@@ -33,10 +34,21 @@ def checkmark_if(pred: bool) -> str:
     return ':heavy_check_mark:' if pred else ''
 
 
-HOME = os.environ['HOME']
+def normalize_envvar_dir(text: str, name: str, dir: str) -> Text | str:
+    rc: Text | str = text
+
+    if dir in text:
+        name_re = rf'({dir})'
+        name_replace = f'${name}'
+        replaced = re.sub(name_re, name_replace, text)
+
+        rc = Text(replaced, style='not bold default')
+        rc.highlight_words(name_replace, style=STYLE_KEYWORD)
+
+    return rc
 
 
-def normalize_envvar(name: str, style_if_not_set: str = STYLE_KEYWORD, highlight_if_set: str | None = None) -> Text:
+def normalize_envvar_name(name: str, style_if_not_set: str = STYLE_KEYWORD, highlight_if_set: str | None = STYLE_KEYWORD) -> Text:
     name_word = f'${name}'
 
     rc = Text(name_word, style=style_if_not_set)
@@ -47,20 +59,11 @@ def normalize_envvar(name: str, style_if_not_set: str = STYLE_KEYWORD, highlight
     return rc
 
 
-def normalize_home(loc: str) -> Text | str:
-    rc: Text | str = loc
-
-    if loc.startswith(HOME):
-        rc = normalize_envvar('HOME').append(loc.removeprefix(HOME), style='not bold default')
-
-    return rc
-
-
 def normalize_loc(ctx: AppContext, loc: str) -> Text | str:
     rc = normalize_path(ctx=ctx, path=loc, locations=['localdir', 'home'])
 
     if isinstance(rc, str):
-        rc = normalize_home(rc)
+        rc = normalize_user_home(rc)
 
     return rc
 
@@ -78,23 +81,27 @@ def normalize_path(ctx: AppContext, path: str, locations: list[str]) -> Text | s
     return rc
 
 
+def normalize_user_home(text: str) -> Text | str:
+    return normalize_envvar_dir(text, 'HOME', os.environ['HOME'])
+
+
 def shell_cli_output(cmd: str, redirect_stderr=False) -> str:
     stderr = subprocess.STDOUT if redirect_stderr else None
     return subprocess.check_output(cmd, stderr=stderr, shell=True, encoding='utf-8', text=True).strip()
 
 
-def uv_info(ctx: AppContext) -> Mapping[str, Text | str]:
+def uv_info(ctx: AppContext) -> Mapping[str, Text | Group | str]:
     uvextras = {
         'Version': shell_cli_output(f'uv --project {ctx.config.envvars["home"]} version'),
         'Python Version': shell_cli_output(f'uv run --project {ctx.config.envvars["home"]} python --version'),
-        'Python Location': normalize_home(
+        'Python Location': normalize_user_home(
             shell_cli_output(f'readlink `uv run --project {ctx.config.envvars["home"]} which python`')
         ),
     }
     project = {
         'Version': shell_cli_output('uv version'),
         'Python Version': shell_cli_output('uv run --active python --version'),
-        'Python Location': normalize_home(shell_cli_output('readlink `uv run --active which python`')),
+        'Python Location': normalize_user_home(shell_cli_output('readlink `uv run --active which python`')),
     }
 
     if ctx.details:
@@ -102,14 +109,21 @@ def uv_info(ctx: AppContext) -> Mapping[str, Text | str]:
             'Dependencies': shell_cli_output('uv tree --all-groups --depth 1'),
         }
 
+    uv_py_dir = shell_cli_output('uv python dir')
+
     uv = {
         'Version': shell_cli_output('uv self version'),
-        'Cache Dir': normalize_home(shell_cli_output('uv cache dir')),
-        'Tool Dir': normalize_home(shell_cli_output('uv tool dir')),
+        'Cache Dir': normalize_user_home(shell_cli_output('uv cache dir')),
+        'Python Install Dir': normalize_user_home(uv_py_dir),
+        'Tool Dir': normalize_user_home(shell_cli_output('uv tool dir')),
     }
 
     if ctx.details:
+        py_vers = shell_cli_output('uv python list --only-installed --managed-python', redirect_stderr=True)
+        uv_python_vers = [normalize_envvar_dir(ln, 'UV_PYTHON_INSTALL_DIR', uv_py_dir) for ln in py_vers.splitlines()]
+
         uv |= {
+            'Python Version(s) Installed': Group(*uv_python_vers),
             'Tool(s) Installed': shell_cli_output('uv tool list', redirect_stderr=True),
         }
 
@@ -138,7 +152,7 @@ def print_locations(ctx: AppContext, console: Console) -> None:
         if ctx.details:
             table.add_row(
                 loc,
-                normalize_envvar(
+                normalize_envvar_name(
                     ev.name,
                     style_if_not_set=f'{STYLE_KEYWORD} not bold dim',
                     highlight_if_set=f'default {STYLE_KEYWORD} bold on wheat1',
