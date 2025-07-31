@@ -162,7 +162,12 @@ scripts:
       graph:
       abbrev-commit:
 ```
-This will execute the following command line: `git log origin  --oneline --decorate=short --color --graph --abbrev-commit`
+
+This will execute the following command line:
+
+```
+git log origin  --oneline --decorate=short --color --graph --abbrev-commit
+```
 
 ### Script with no command
 
@@ -173,6 +178,8 @@ _See the allclean script declaration in [./uvextras/uvextras.yaml](./uvextras/uv
 ### Dependencies
 
 Scripts entries may specify the `depends-on` attribute. This is an array of scripts that should run before the requested script is executed.
+
+_See the allclean script declaration in [./uvextras/uvextras.yaml](./uvextras/uvextras.yaml) for an example._
 
 ### Override Options for Built-in scripts
 
@@ -186,7 +193,7 @@ _See the clean and enable-dev script declarations in [./.uvextras/uvextras.yaml]
 
 By default, the info verb output displays 3 tables without `--details` - `Info`, `Locations` and `Scripts`.
 
-Here is the output from executing `uvextras info -d --all` in my [oci-shared-images](https://github.com/klmcwhirter/oci-shared-images) project dir.
+Here is the output from executing `uvextras info --details --all` in my [oci-shared-images](https://github.com/klmcwhirter/oci-shared-images) project dir.
 
 ![info table](./docs/uvextras_info.png)
 
