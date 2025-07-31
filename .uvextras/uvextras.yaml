@@ -1,5 +1,10 @@
 scripts:
 
+  - name: clean
+    is-local: false
+    options:
+      items_to_delete: build/ .coverage coverage.xml uvextras.egg-info/ log/ .mypy_cache/ __pypackages__ .pytest_cache/ .ruff_cache/
+
   - name: enable-dev
     is-local: false
     options:

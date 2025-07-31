@@ -5,12 +5,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional, Self
 
+from uvextras.shell import shell_cli_output
+
 
 @dataclass
 class AppConfigEnvVar:
     bind: str
     name: str
     resolve: list[str]
+    set_in_env: bool = field(default=False, init=False)
 
 
 def resolve_envvar(ev: AppConfigEnvVar) -> tuple[str, str]:
@@ -19,7 +22,8 @@ def resolve_envvar(ev: AppConfigEnvVar) -> tuple[str, str]:
     resolved = ''
 
     # env var overrides resolution process - short circuit
-    if name in os.environ.keys():
+    if name in os.environ:
+        ev.set_in_env = True
         resolved = os.environ[name]
     elif ev.resolve is not None:
         # loop through the resolution rules and accept the first one that exists
@@ -32,6 +36,27 @@ def resolve_envvar(ev: AppConfigEnvVar) -> tuple[str, str]:
     return (bind, resolved)
 
 
+UVEX_CONFIG = 'uvexconfig'
+UVEX_HOME = 'uvexhome'
+UVEX_SCRIPTS = 'uvexscripts'
+UVEX_LOCALDIR = 'uvexlocaldir'
+UVEX_LOCALCONFIG = 'uvexlocalconfig'
+UVEX_LOCALSCRIPTS = 'uvexlocalscripts'
+UV_PYTHON_INSTALL_DIR = 'uv_python_install_dir'
+UV_TOOL_DIR = 'uv_tool_dir'
+
+_env_var_keys = [
+    UVEX_CONFIG,
+    UVEX_HOME,
+    UVEX_SCRIPTS,
+    UVEX_LOCALDIR,
+    UVEX_LOCALCONFIG,
+    UVEX_LOCALSCRIPTS,
+    UV_PYTHON_INSTALL_DIR,
+    UV_TOOL_DIR,
+]
+
+
 @dataclass
 class AppConfigEnvVarDict(dict[str, Any]):
     envvars: list[AppConfigEnvVar] = field(default_factory=list[AppConfigEnvVar], repr=False)
@@ -39,17 +64,42 @@ class AppConfigEnvVarDict(dict[str, Any]):
     def __post_init__(self):
         self._bound = {}
 
+        # define $uvex_root so it can be used
+        root = os.path.dirname(os.path.dirname(__file__))
+        os.environ['uvex_root'] = root
+
+        # Bind built-ins
+
+        config = AppConfigEnvVarDict.config_ev()
+        self.envvars.insert(0, config)
+
+        for ev in AppConfigEnvVarDict.uv_envs():
+            self.envvars.append(ev)
+
         for ev in self.envvars:
             _ = self[ev.bind]
 
     def __getitem__(self, key: str) -> Any:
+        if key not in _env_var_keys:
+            raise KeyError(f'{key} not allowed. Possibile values are one of {", ".join(_env_var_keys)}')
+
         if key not in self._bound:
             evs = [e for e in filter(lambda ev: ev.bind == key, self.envvars)]
             if evs and len(evs) > 0:
-                bind, resolved = resolve_envvar(evs[0])
+                ev = evs[0]
+                bind, resolved = resolve_envvar(ev)
                 self._bound[bind] = resolved
 
+                # Enable ev.name to be used for future invocations of resolve_envvar(ev)
+                os.environ[ev.name] = resolved
+
         return self._bound.get(key, None)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        if key not in _env_var_keys:
+            raise KeyError(f'{key} not allowed. Possibile values are one of {", ".join(_env_var_keys)}')
+
+        super().__setitem__(key, value)
 
     def __repr__(self) -> str:
         rc = f'{self.__class__.__name__}({self._bound})'
@@ -58,6 +108,38 @@ class AppConfigEnvVarDict(dict[str, Any]):
     def __rich_repr__(self):
         for k, v in self._bound.items():
             yield k, v
+
+    def find_bind(self, bind: str) -> AppConfigEnvVar:
+        return [ev for ev in self.envvars if ev.bind == bind][0]
+
+    @staticmethod
+    def config_ev() -> AppConfigEnvVar:
+        return AppConfigEnvVar(
+            bind=UVEX_CONFIG,
+            name='UVEX_CONFIG',
+            resolve=[
+                str(Path(os.path.dirname(__file__)) / 'uvextras.yaml'),
+            ],
+        )
+
+    @staticmethod
+    def uv_envs() -> list[AppConfigEnvVar]:
+        return [
+            AppConfigEnvVar(
+                bind=UV_PYTHON_INSTALL_DIR,
+                name='UV_PYTHON_INSTALL_DIR',
+                resolve=[
+                    shell_cli_output('uv python dir'),
+                ],
+            ),
+            AppConfigEnvVar(
+                bind=UV_TOOL_DIR,
+                name='UV_TOOL_DIR',
+                resolve=[
+                    shell_cli_output('uv tool dir'),
+                ],
+            ),
+        ]
 
 
 @dataclass
@@ -96,7 +178,7 @@ class AppConfigScript:
             self.depends_on.extend(other.depends_on)
 
     def path(self, envvars: AppConfigEnvVarDict) -> Path:
-        script_path = f'{envvars["localscripts"]}/{self.name}' if self.is_local else f'{envvars["scripts"]}/{self.name}'
+        script_path = f'{envvars[UVEX_LOCALSCRIPTS]}/{self.name}' if self.is_local else f'{envvars[UVEX_SCRIPTS]}/{self.name}'
         script_path = f'{script_path}.py' if not script_path.endswith('.py') else script_path
         return Path(script_path)
 
@@ -109,6 +191,14 @@ class AppConfig:
     def __rich_repr__(self):
         yield 'envvars', self.envvars
         yield 'scripts', self.scripts
+
+    @property
+    def uv_py_dir(self) -> str:
+        return self.envvars[UV_PYTHON_INSTALL_DIR]
+
+    @property
+    def uv_tool_dir(self) -> str:
+        return self.envvars[UV_TOOL_DIR]
 
     def find_script(self, name: str) -> Optional[AppConfigScript]:
         rc = None
@@ -188,25 +278,16 @@ class AppConfig:
 
 
 def load_config() -> AppConfig:
-    # bootstrap config - copied from uvextras.yaml
-    config_ev = AppConfigEnvVar(
-        bind='config',
-        name='UVEXTRAS_CONFIG',
-        resolve=[
-            '$XDG_CONFIG_HOME/uvextras/uvextras.yaml',
-            '$HOME/.config/uvextras/uvextras.yaml',
-            '$PWD/uvextras.yaml',
-        ],
-    )
+    config_ev = AppConfigEnvVarDict.config_ev()
     _, config_file = resolve_envvar(config_ev)
     config = load_config_for(config_file)
 
-    local_config = config.envvars['localconfig']
+    local_config = config.envvars[UVEX_LOCALCONFIG]
     if os.path.exists(local_config):
         lcfg = load_config_for(local_config)
         config.merge(lcfg)
 
-    config.merge_scripts(config.envvars['localscripts'], desc='merged from local')
+    config.merge_scripts(config.envvars[UVEX_LOCALSCRIPTS], desc='merged from local')
 
     return config
 

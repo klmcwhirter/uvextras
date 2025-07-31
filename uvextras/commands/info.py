@@ -1,7 +1,7 @@
 import logging
 import os
-import re
-import subprocess
+import sys
+from functools import partial
 from typing import Mapping
 
 from rich import box
@@ -9,137 +9,82 @@ from rich.console import Console, Group
 from rich.table import Table
 from rich.text import Text
 
+from uvextras.config import (
+    UV_PYTHON_INSTALL_DIR,
+    UV_TOOL_DIR,
+    UVEX_HOME,
+    UVEX_LOCALDIR,
+    UVEX_LOCALSCRIPTS,
+    UVEX_SCRIPTS,
+)
 from uvextras.context import AppContext
-
-STYLE_CHECKMARK = 'bold green1'
-STYLE_HIGHLIGHT = 'bold on wheat1'
-STYLE_KEYWORD = 'bold yellow'
-STYLE_SCRIPT_LOC = 'blue3'
-STYLE_SCRIPT_NAME = 'dark_red'
-STYLE_SCRIPT_LOCAL_NAME = 'bold magenta'
-STYLE_UV_KEY = 'bold spring_green4'
-STYLE_UV_SEC = 'bold gray50'
+from uvextras.shell import shell_cli_output
+from uvextras.stylize import (
+    STYLE_CHECKMARK,
+    STYLE_ENV_VAR,
+    STYLE_HIGHLIGHT,
+    STYLE_KEYWORD,
+    STYLE_SCRIPT_LOCAL_NAME,
+    STYLE_SCRIPT_NAME,
+    STYLE_UV_KEY,
+    STYLE_UV_SEC,
+    RichRenderable,
+    checkmark_if,
+    highlight_envvar_name,
+    stylize_dirs_from_ev,
+)
 
 locations = [
-    'config',
-    'home',
-    'scripts',
-    'localdir',
-    'localconfig',
-    'localscripts',
+    # These are in priority order -> more specific to less specific
+    UVEX_LOCALSCRIPTS,
+    UVEX_LOCALDIR,
+    UVEX_SCRIPTS,
+    UVEX_HOME,
+    UV_TOOL_DIR,
+    UV_PYTHON_INSTALL_DIR,
 ]
 
-
-def checkmark_if(pred: bool) -> str:
-    return ':heavy_check_mark:' if pred else ''
+_stylize_dirs_with_ev = partial(stylize_dirs_from_ev, binds=locations)
 
 
-def normalize_envvar_dir(text: str, name: str, dir: str) -> Text | str:
-    rc: Text | str = text
-
-    if dir in text:
-        name_re = rf'({dir})'
-        name_replace = f'${name}'
-        replaced = re.sub(name_re, name_replace, text)
-
-        rc = Text(replaced, style='not bold default')
-        rc.highlight_words(name_replace, style=STYLE_KEYWORD)
-
-    return rc
-
-
-def normalize_envvar_name(name: str, style_if_not_set: str = STYLE_KEYWORD, highlight_if_set: str | None = STYLE_KEYWORD) -> Text:
-    name_word = f'${name}'
-
-    rc = Text(name_word, style=style_if_not_set)
-
-    if name in os.environ and highlight_if_set:
-        rc.highlight_words(name_word, style=highlight_if_set)
-
-    return rc
-
-
-def normalize_loc(ctx: AppContext, loc: str) -> Text | str:
-    rc = normalize_path(ctx=ctx, path=loc, locations=['localdir', 'home'])
-
-    if isinstance(rc, str):
-        rc = normalize_user_home(rc)
-
-    return rc
-
-
-def normalize_path(ctx: AppContext, path: str, locations: list[str]) -> Text | str:
-    rc: Text | str = path
-
-    for loc in locations:
-        loc_path = ctx.config.envvars[loc]
-        if path.startswith(loc_path) and loc_path and path != loc_path:
-            rc = path.removeprefix(loc_path)
-            rc = Text(f'[{loc}]', style=STYLE_SCRIPT_LOC).append(rc, style='not bold default')
-            break
-
-    return rc
-
-
-def normalize_user_home(text: str) -> Text | str:
-    return normalize_envvar_dir(text, 'HOME', os.environ['HOME'])
-
-
-def normalize_uv_or_home(text: str, uv_py_dir: str) -> Text | str:
-    rc = normalize_envvar_dir(text, 'UV_PYTHON_INSTALL_DIR', uv_py_dir)
-
-    if isinstance(rc, str):
-        # try home
-        rc = normalize_user_home(rc)
-
-    return rc
-
-
-def shell_cli_output(cmd: str, redirect_stderr=False) -> str:
-    stderr = subprocess.STDOUT if redirect_stderr else None
-    return subprocess.check_output(cmd, stderr=stderr, shell=True, encoding='utf-8', text=True).strip()
-
-
-def uv_info(ctx: AppContext) -> Mapping[str, Text | Group | str]:
-    uv_py_dir = shell_cli_output('uv python dir')
-
-    uvextras = {
-        'Version': shell_cli_output(f'uv --project {ctx.config.envvars["home"]} version'),
-        'Python Version': shell_cli_output(f'uv run --project {ctx.config.envvars["home"]} python --version'),
-        'Python Location': normalize_uv_or_home(
-            shell_cli_output(f'readlink `uv run --project {ctx.config.envvars["home"]} which python`'),
-            uv_py_dir,
-        ),
-    }
+def uv_info(ctx: AppContext) -> Mapping[str, Mapping[str, RichRenderable]]:
     project = {
-        'Version': shell_cli_output('uv version'),
-        'Python Version': shell_cli_output('uv run --active python --version'),
-        'Python Location': normalize_uv_or_home(
-            shell_cli_output('readlink `uv run --active which python`'),
-            uv_py_dir,
+        'Version': shell_cli_output('unset VIRTUAL_ENV;uv version'),
+        'Python Version': shell_cli_output("unset VIRTUAL_ENV;uv run python -c 'import sys; print(sys.version.split()[0])'"),
+        'Python Location': _stylize_dirs_with_ev(
+            ctx,
+            os.path.realpath(
+                shell_cli_output("unset VIRTUAL_ENV;uv run python -c 'import sys; print(sys.executable)'"),
+            ),
         ),
     }
 
     if ctx.details:
         project |= {
-            'Dependencies': shell_cli_output('uv tree --all-groups --depth 1'),
+            'Dependencies': shell_cli_output('unset VIRTUAL_ENV;uv tree --all-groups --depth 1'),
         }
 
     uv = {
         'Version': shell_cli_output('uv self version'),
-        'Cache Dir': normalize_user_home(shell_cli_output('uv cache dir')),
-        'Python Install Dir': normalize_user_home(uv_py_dir),
-        'Tool Dir': normalize_user_home(shell_cli_output('uv tool dir')),
+        'Cache Dir': _stylize_dirs_with_ev(ctx, shell_cli_output('uv cache dir')),
+        'Python Install Dir': _stylize_dirs_with_ev(ctx, ctx.config.uv_py_dir),
+        'Tool Dir': _stylize_dirs_with_ev(ctx, ctx.config.uv_tool_dir),
     }
 
     if ctx.details:
         py_vers = shell_cli_output('uv python list --only-installed --managed-python', redirect_stderr=True)
-        uv_python_vers = [normalize_uv_or_home(ln, uv_py_dir) for ln in py_vers.splitlines()]
+        uv_python_vers = [_stylize_dirs_with_ev(ctx, ln) for ln in py_vers.splitlines()]
 
         uv |= {
             'Python Version(s) Installed': Group(*uv_python_vers),
-            'Tool(s) Installed': shell_cli_output('uv tool list', redirect_stderr=True),
+            'Tool(s) Installed': _stylize_dirs_with_ev(ctx, shell_cli_output('uv tool list --show-paths', redirect_stderr=True)),
         }
+
+    uvextras = {
+        'Version': '0.1.0',
+        'Python Version': sys.version.split()[0],
+        'Python Location': _stylize_dirs_with_ev(ctx, os.path.realpath(sys.executable)),
+    }
 
     return {
         'uv': uv,
@@ -153,7 +98,7 @@ def print_locations(ctx: AppContext, console: Console) -> None:
 
     table = Table(title='Locations', title_justify='left', show_lines=True, box=box.ROUNDED)
 
-    table.add_column('Type', style=STYLE_SCRIPT_LOC)
+    table.add_column('Item', style=STYLE_ENV_VAR)
 
     if ctx.details:
         table.add_column('Override', STYLE_KEYWORD)
@@ -166,15 +111,16 @@ def print_locations(ctx: AppContext, console: Console) -> None:
         if ctx.details:
             table.add_row(
                 loc,
-                normalize_envvar_name(
+                highlight_envvar_name(
                     ev.name,
+                    ev.set_in_env,
                     style_if_not_set=f'{STYLE_KEYWORD} not bold dim',
                     highlight_if_set=f'default {STYLE_KEYWORD} bold on wheat1',
                 ),
-                normalize_loc(ctx, ctx.config.envvars[loc]),
+                _stylize_dirs_with_ev(ctx, ctx.config.envvars[loc]),
             )
         else:
-            table.add_row(loc, normalize_loc(ctx, ctx.config.envvars[loc]))
+            table.add_row(loc, _stylize_dirs_with_ev(ctx, ctx.config.envvars[loc]))
 
     console.print(table)
 
@@ -207,15 +153,7 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
         depends = Text('\n'.join(s.depends_on), style=STYLE_HIGHLIGHT) if s.depends_on else ''
 
         if ctx.details:
-            script_path = (
-                normalize_path(
-                    ctx=ctx,
-                    path=str(s.path(ctx.config.envvars)),
-                    locations=['scripts', 'localscripts'],
-                )
-                if s.use_python
-                else ''
-            )
+            script_path = _stylize_dirs_with_ev(ctx=ctx, text=str(s.path(ctx.config.envvars))) if s.use_python else ''
             options = '\n--'.join(s.options_str.split(' --'))
             table.add_row(name, depends, s.desc, checkmark_if(s.is_local), s.cmd, checkmark_if(s.use_python), script_path, options)
         else:
@@ -224,7 +162,7 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
     console.print(table)
 
 
-def print_uv_table(map: Mapping[str, Text | str], console: Console) -> None:
+def print_uv_table(map: Mapping[str, Mapping[str, RichRenderable]], console: Console) -> None:
     console.print()
 
     table = Table(title='Info', title_justify='left', show_lines=True, box=box.ROUNDED)

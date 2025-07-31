@@ -16,11 +16,11 @@ def exec_dependencies(ctx: AppContext, script: AppConfigScript) -> None:
 
 
 def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
-    # this is needed to pass args through to cmd executed by script
-    preamble = '-- ' if script.use_python else ''
-    extra_args = preamble + ' '.join(ctx.args.args) if ctx.args.args else ''
+    built_in_cmd = f'uv run {' --no-sync --frozen' if not os.path.exists("pyproject.toml") else ' --no-project'}'
+    preamble = f'{built_in_cmd if script.use_python else script.cmd}'
+    extra_args = ' '.join(ctx.args.args) if ctx.args.args else ''
     script_path = script.path(ctx.config.envvars) if script.use_python else ''
-    cmd = f'{script.cmd} {script_path} {script.options_str} {extra_args}'
+    cmd = f'{preamble} {script_path} {script.options_str} {extra_args}'
 
     if ctx.verbose:
         print(cmd)
@@ -46,7 +46,7 @@ def cmd(ctx: AppContext) -> None:
         if script.depends_on:
             exec_dependencies(ctx, script)
 
-        if script.cmd is not None:
+        if script.cmd is not None or script.use_python:
             exec_script(ctx, script)
     else:
         logging.error(f'Script {ctx.args.script} is not known.')

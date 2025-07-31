@@ -12,8 +12,8 @@ cmd_map: Mapping[str, CommandType] = {
 }
 
 
-def main(args: list) -> None:
-    ctx = parse_args(args=args)
+def main() -> None:
+    ctx = parse_args(args=sys.argv[1:])
     ctx.log()
 
     cmd = cmd_map[ctx.verb]
@@ -21,4 +21,4 @@ def main(args: list) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

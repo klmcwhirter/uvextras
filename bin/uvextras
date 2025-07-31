@@ -1,7 +1,0 @@
-#!/bin/bash
-
-root=$(dirname $(dirname $(readlink -f $0)))
-
-source "${root}/.venv/bin/activate"
-
-PYTHONPATH=$root:$PYTHONPATH uv -q run --project "${root}" python -m uvextras "$@"

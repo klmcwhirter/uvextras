@@ -1,48 +1,39 @@
 
 envvars:
-  - bind: config
-    name: UVEXTRAS_CONFIG
+  - bind: uvexhome
+    name: UVEX_HOME
     resolve:
-      - $XDG_CONFIG_HOME/uvextras/uvextras.yaml
-      - $HOME/.config/uvextras/uvextras.yaml
-      - $PWD/uvextras.yaml
-
-  - bind: home
-    name: UVEXTRAS_HOME
-    resolve:
-      - $XDG_DATA_HOME/share/uvextras
-      - $HOME/.local/share/uvextras
+      - $uvex_root
       - $PWD
 
-  - bind:  scripts
-    name: UVEXTRAS_SCRIPTS
+  - bind:  uvexscripts
+    name: UVEX_SCRIPTS
     resolve:
-      - $XDG_DATA_HOME/share/uvextras/scripts
-      - $HOME/.local/share/uvextras/scripts
-      - $PWD/scripts
+      - $UVEX_HOME/uvextras/scripts
 
-  - bind: localdir
-    name: UVEXTRAS_LOCAL
+  - bind: uvexlocaldir
+    name: UVEX_LOCAL
     resolve:
-      - .uvextras
+      - $PWD/.uvextras
 
-  - bind: localconfig
-    name: UVEXTRAS_LOCAL_CONFIG
+  - bind: uvexlocalconfig
+    name: UVEX_LOCAL_CONFIG
     resolve:
-      - .uvextras/uvextras.yaml
+      - $UVEX_LOCAL/uvextras.yaml
 
-  - bind: localscripts
-    name: UVEXTRAS_LOCAL_SCRIPTS
+  - bind: uvexlocalscripts
+    name: UVEX_LOCAL_SCRIPTS
     resolve:
-      - .uvextras/scripts
+      - $UVEX_LOCAL/scripts
 
 scripts:
   - name: create
     desc: Create .venv optionally --system-site-packages (override `with-system` in project config)
-    cmd: uv run --no-project
+    cmd:
     is-local: false
-    options:
-      with-system:
+    # options:
+    #   python: FULL_PATH_TO_PYTHON_EXE
+    #   with-system:
 
   - name: allclean
     desc: runs clean and envclean; similar to distclean
@@ -54,28 +45,28 @@ scripts:
 
   - name: clean
     desc: cleans artifacts; override `items_to_delete` in project config
-    cmd: uv run
+    cmd:
     is-local: false
     options:
-      items_to_delete: build .coverage coverage.xml *.egg-info log .mypy_cache __pycache__ __pypackages__ .pytest_cache .ruff_cache .tox
+      items_to_delete: build/ .coverage/ coverage.xml *.egg-info/ log/ .mypy_cache/ __pypackages__/ .pytest_cache/ .ruff_cache/
 
   - name: envclean
     desc: cleans environment artifacts; override `items_to_delete` in project config
-    cmd: uv run
+    cmd:
     is-local: false
     options:
       items_to_delete: node_modules/ .venv/
 
   - name: enable-dev
     desc: adds dev group pkgs; override `pkgs` in project config
-    cmd: uv run
+    cmd:
     is-local: false
     options:
-      pkgs: mypy pytest pytest-cov tox
+      pkgs: mypy pytest
 
   - name: gitignore
     desc: creates .gitignore - override `features` and `addons` entries in project config
-    cmd: uv run --no-project
+    cmd:
     is-local: false
     options:
       features: python

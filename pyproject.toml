@@ -13,17 +13,24 @@ dependencies = [
 dev = [
     "mypy>=1.17.0",
     "pytest>=8.4.1",
-    "pytest-cov>=6.2.1",
-    "tox>=4.27.0",
     "types-pyyaml>=6.0.12.20250516",
 ]
+
+[project.scripts]
+uvextras = "uvextras:entrypoint"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
 
 [tool.isort]
 multi_line_output = 3
 
 [tool.pyright]
-typeCheckingMode = "off"
-ignore = ["*"]
+typeCheckingMode = "standard"
+# ignore = ["*"]
 
 [tool.ruff]
 extend = "${XDG_CONFIG_HOME}/ruff/pyproject.toml"
