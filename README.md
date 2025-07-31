@@ -6,7 +6,13 @@ Inspired by the need for `pdm` _scripts_ feature set and an `uv info` command.
 
 `uvextras` is written in Python.
 
-To install: `uv tool install https://github.com/klmcwhirter/uvextras.git`. _It is not published to pypi.org_
+To install:
+
+```
+uv tool install https://github.com/klmcwhirter/uvextras.git
+```
+
+_It is not published to pypi.org_
 
 
 * [Features](#features)
