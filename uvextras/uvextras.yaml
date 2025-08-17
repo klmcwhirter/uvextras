@@ -32,7 +32,6 @@ scripts:
     cmd:
     is-local: false
     # options:
-    #   python: FULL_PATH_TO_PYTHON_EXE
     #   with-system:
 
   - name: allclean

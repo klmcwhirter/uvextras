@@ -150,6 +150,7 @@ class AppConfigScript:
     cmd: str
     use_python: bool
     is_local: bool
+    env: dict[str, Any]
     options: dict[str, Any]
 
     def __rich_repr__(self):
@@ -159,6 +160,7 @@ class AppConfigScript:
         yield 'cmd', self.cmd
         yield 'use_python', self.use_python
         yield 'is_local', self.is_local
+        yield 'env', self.env
         yield 'options', self.options
 
     @property
@@ -170,6 +172,10 @@ class AppConfigScript:
         return ' '.join(options)
 
     def merge(self, other: Self) -> None:
+        for e in other.env:
+            # override any specified env var settings
+            self.env[e] = other.env[e]
+
         for o in other.options:
             # override any specified options
             self.options[o] = other.options[o]
@@ -212,7 +218,7 @@ class AppConfig:
     def merge(self, other: Self) -> None:
         for s in other.scripts:
             if not s.is_local:
-                # merge options and depends_on
+                # merge env, options and depends_on
                 gs = self.find_script(s.name)
                 if gs is not None:
                     gs.merge(s)
@@ -244,6 +250,7 @@ class AppConfig:
                     cmd='uv run',
                     use_python=True,
                     is_local=True,
+                    env={},
                     options={},
                 )
                 for name in filtered_script_names
@@ -270,6 +277,7 @@ class AppConfig:
                 use_python=s.get('use-python', True),
                 desc=s.get('desc', ''),
                 is_local=s.get('is-local', True),
+                env=s.get('env', {}),
                 options=s.get('options', {}),
             )
             for s in data.get('scripts', [])

@@ -155,6 +155,11 @@ def print_scripts(ctx: AppContext, console: Console) -> None:
         if ctx.details:
             script_path = _stylize_dirs_with_ev(ctx=ctx, text=str(s.path(ctx.config.envvars))) if s.use_python else ''
             options = '\n--'.join(s.options_str.split(' --'))
+            if s.env:
+                options += '\n\nEnv Vars:'
+                for e in  s.env:
+                    options += f'\n${e}={s.env[e]}'
+                options = _stylize_dirs_with_ev(ctx=ctx, text=options)
             table.add_row(name, depends, s.desc, checkmark_if(s.is_local), s.cmd, checkmark_if(s.use_python), script_path, options)
         else:
             table.add_row(name, depends, s.desc, checkmark_if(s.is_local), checkmark_if(s.use_python))

@@ -32,6 +32,10 @@ def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
     if 'VIRTUAL_ENV' in environ:
         del environ['VIRTUAL_ENV']
 
+    # set configured env vars
+    for e in script.env:
+        environ[e] = str(script.env[e])
+
     try:
         subprocess.call(cmd, shell=True, env=environ, text=ctx.verbose)
     except KeyboardInterrupt:
