@@ -2,7 +2,7 @@
 
 Extra _custom_ features for `uv` as a tool.
 
-Inspired by the need for `pdm` _scripts_ feature set and an `uv info` command.
+Inspired by my familiarity of `pdm` _scripts_ feature set and an `uv info` command.
 
 `uvextras` is written in Python.
 
@@ -20,6 +20,7 @@ _It is not published to pypi.org_
 * [Built-in Scripts](#built-in-scripts)
 * [Scripts Features](#scripts-features)
 * [Info Output](#info-output)
+* [Branches](#branches)
 
 ## Features
 
@@ -201,3 +202,7 @@ Here is the output from executing `uvextras info --details --all` in my [oci-sha
 
 ![scripts table](./docs/uvextras_scripts.png)
 
+## Branches
+
+* 0.10.0 - upon early adopting `uv` and while still learning, I was tripped up by the general principle that Python environments should be considered ephemeral
+and not manually managed. There are edge cases where this is not true. But they are rare. Since 0.10.0 I decided to rethink the design of uvextras accordingly.
