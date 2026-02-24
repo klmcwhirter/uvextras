@@ -130,9 +130,9 @@ The scripts may be specified in 3 different ways.
 #### Just drop a .py file
 Placing a `.py` file in your `.uvextras/scripts` dir makes it available to `uvextras run`. Any script placed in the `uvexlocalscripts` dir will be merged into the list of available scripts using the filename. They will be displayed as _Local_ by `uvextras info`.
 
-These can be just normal python scripts, but are executed via `uv run`. This means that all the features described at [Running scripts](https://docs.astral.sh/uv/guides/scripts/) are available.
+These can be just normal python scripts, but are executed via `uv run --script`. This means that all the features described at [Running scripts](https://docs.astral.sh/uv/guides/scripts/) are available.
 
-Any metadata will be interpretted by `uv run`, but will not display via `uvextras info --details`.
+Any _inline_ metadata will be interpretted by `uv run --script`, but will not display via `uvextras info --details`.
 
 #### Declare the script - location is automatically detected
 
@@ -172,7 +172,7 @@ git log origin  --oneline --decorate=short --color --graph --abbrev-commit
 
 ### Script with no command
 
-Scripts may declared to do nothing but provide a description and declare dependencies.
+Scripts may be declared to do nothing but provide a description and declare dependencies.
 
 _See the allclean script declaration in [./uvextras/uvextras.yaml](./uvextras/uvextras.yaml) for an example._
 
@@ -204,5 +204,12 @@ Here is the output from executing `uvextras info --details --all` in my [oci-sha
 
 ## Branches
 
-* 0.10.0 - upon early adopting `uv` and while still learning, I was tripped up by the general principle that Python environments should be considered ephemeral
-and not manually managed. There are edge cases where this is not true. But they are rare. Since 0.10.0 I decided to rethink the design of uvextras accordingly.
+* 0.1.0 - early on while starting to adopt `uv` and still learning, I was tripped up by the general principle that Python environments should be considered 
+ephemeral and not manually managed. There are edge cases where environments are expensive and complicated to (re)create. But they are rare.
+
+  _Think importing cpython extension modules that need to be built with a specific toolchain or when working with pre-release versions of cpython where 
+  pre-compiled wheels are not available yet._
+
+  And so, after I learned more, I decided to rethink the design of `uvextras run` accordingly. Specifically, rely on the default feature set involving running scripts more, but allow for complex venv needs where they exist.
+
+* 1.0.0 - redesign to leverage more default behaviors of `uv` while still providing global built-in scripts that are available in any project where uvextras is used.

@@ -15,7 +15,7 @@ from uvextras.config import (
     UVEX_HOME,
     UVEX_LOCALDIR,
     UVEX_LOCALSCRIPTS,
-    UVEX_SCRIPTS,
+    UVEX_SCRIPTS
 )
 from uvextras.context import AppContext
 from uvextras.shell import shell_cli_output
@@ -31,7 +31,7 @@ from uvextras.stylize import (
     RichRenderable,
     checkmark_if,
     highlight_envvar_name,
-    stylize_dirs_from_ev,
+    stylize_dirs_from_ev
 )
 
 locations = [

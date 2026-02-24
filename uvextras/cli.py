@@ -26,10 +26,6 @@ def parse_args(args: list[str]) -> AppContext:
     info.add_argument('-s', '--scripts', default=False, action='store_true', help='hide scripts')
     info.add_argument('-v', '--verbose', default=False, action='store_true', help='enable verbose output')
 
-    # init_desc = 'wraps `uv init` with global default options'
-    # init = verbs.add_parser('init', description=init_desc, help=init_desc, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # init.add_argument('-v', '--verbose', default=False, action='store_true', help='enable verbose output')
-
     run_desc = 'run script'
     run = verbs.add_parser('run', description=run_desc, help=run_desc, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     run.add_argument('script', default=None, help='name of script to execute')

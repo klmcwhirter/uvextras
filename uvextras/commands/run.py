@@ -16,8 +16,7 @@ def exec_dependencies(ctx: AppContext, script: AppConfigScript) -> None:
 
 
 def exec_script(ctx: AppContext, script: AppConfigScript) -> None:
-    built_in_cmd = f'uv run {' --no-sync --frozen' if not os.path.exists("pyproject.toml") else ' --no-project'}'
-    preamble = f'{built_in_cmd if script.use_python else script.cmd}'
+    preamble = 'uv run --script' if script.use_python else script.cmd
     extra_args = ' '.join(ctx.args.args) if ctx.args.args else ''
     script_path = script.path(ctx.config.envvars) if script.use_python else ''
     cmd = f'{preamble} {script_path} {script.options_str} {extra_args}'

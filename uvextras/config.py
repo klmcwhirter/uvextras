@@ -247,7 +247,7 @@ class AppConfig:
                     name=name,
                     desc=desc,
                     depends_on=[],
-                    cmd='uv run',
+                    cmd='',
                     use_python=True,
                     is_local=True,
                     env={},

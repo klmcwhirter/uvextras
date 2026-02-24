@@ -2,12 +2,11 @@ import sys
 from typing import Mapping
 
 from uvextras.cli import parse_args
-from uvextras.commands import info, init, run
+from uvextras.commands import info, run
 from uvextras.commands.type import CommandType
 
 cmd_map: Mapping[str, CommandType] = {
     'info': info.cmd,
-    'init': init.cmd,
     'run': run.cmd,
 }
 
